@@ -1,0 +1,15 @@
+{
+  "name": "sql-to-splunk-spl",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "cd src && node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "git@github.com:Anonymity94/sql-to-splunk-spl.git",
+  "author": "wangfucheng <wangfucheng@machloop.com>",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "pegjs": "^0.10.0"
+  }
+}
