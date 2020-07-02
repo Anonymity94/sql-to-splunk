@@ -1,75 +1,103 @@
+{
+  var FIELDS = 'FIELDS';
+  var RENAME = 'RENAME';
+}
+
 start
- = select _ columns:Columns _ from _ table:TableName whereCommand:(_ where _ Condition)? __ ';'?{
- 	  // console.log('vvvvvvvv')
-    // console.log('columns', columns)
-    // console.log('whereCommand', whereCommand)
-    // console.log('^^^^^^^')
-    var result = `source=${table}`;
+  = SELECT _ columns:ColumnCommand _ FROM _ table:TableName where:(_ WHERE _ WhereCommand)? __ ';'?{
+    var dsl = `source=${table}`;
     
     // where条件
-    var whereText = '';
-    if(!!whereCommand) {
-    	var where = whereCommand[3];
-        for(let  key in where) {
-        	whereText += ` ${key}=${where[key]}`
-        }
-        result += `${whereText}`
+    if(!!where) {
+    	var whereString = where[3];
+        dsl += ` ${whereString}`
     }
     
-    // 查询的字段：如果查某个字段，不是*
-    if(Array.isArray(columns)) {
-    	result += ` | FIELDS ${columns.join(',')}`
-    }
+    // 搜索的字段
+    dsl += columns;
     
-   return result
- }
+    return dsl
+  }
 
-// select，忽略大小写
-select = "SELECT"i
-from = "FROM"i
-where = "WHERE"i
-and = "AND"i
+SELECT = "SELECT"i
+FROM = "FROM"i
+WHERE = "WHERE"i
+AND = "AND"i
+AS = "AS"i
+OR = "OR"i
+LIKE = "LIKE"i
+GROUP_BY = "GROUP BY"i
 
-// 来源
+// 数据来源表名
 TableName
- = name:Field+ {
-   return name.join("")
- }
- 
-// 搜索的字段
-Columns 'Columns'
-  = '(' __ first:Field rest:MoreFields* __ ')' {
-  	// console.log(first, rest)
-    return [first].concat(rest)
+  = name:Field+ {
+    return name.join("")
+  }
+
+// ==== 搜索的字段 S ==== 
+ColumnCommand 'ColumnCommand'
+  = '(' __ first:ColumnField rest:MoreColumnFields* __ ')' {
+    var renameArr = [];
+    var fieldsArr = [];
+     
+    [first].concat(rest).forEach(item => {
+      if(item.length === 2 && item[1]) {
+        renameArr.push(item);
+      } else {
+        fieldsArr.push(item);
+      }
+    })
+
+    var result = '';
+    if(renameArr.length > 0){
+      result += `${renameArr.map(item => ` | ${RENAME} ` + (item[0] + ' as ' + item[1])).join(' ')}`
+    }
+    if(fieldsArr.length > 0) {
+      result += ` | ${FIELDS} ${fieldsArr.map(item => item[0]).join(', ')}`
+    }
+    return result;
   }
   / name:Field+ {
-   return name
- }
- / '*'
+    return ` | ${FIELDS} ${name}`
+  }
+  / '*' { return '' }
 
-MoreFields 'MoreFields'
-  = ','? _? field:Field { return field }
+// 字段等
+ColumnField
+  // name as newName => [name, newName]
+  // age => [age, ]
+  = oldValue:Field _? AS? _? newValue:Field? {
+    return [oldValue, newValue]
+  }
 
-// where条件
-Condition 'Condition'
- = '(' __ first:ConditionCommand rest:MoreConditions* __ ')' {
- 	  // console.log('Condition-first', first)
-    // console.log('Condition-rest', rest)
+MoreColumnFields 'MoreColumnFields'
+  = ','? _? field:ColumnField { return field }
+// ==== 搜索的字段 E ==== 
+
+// ==== where条件 S ====
+WhereCommand 'WhereCommand'
+ = '(' __ first:ConditionCommand rest:MoreConditionCommand* __ ')' {
     var arr = [first].concat(rest);
-    var obj = {};
-    for (var i=0; i<arr.length; i++) {
-    	obj = Object.assign(obj, arr[i]);
-    }
-    return obj;
+    return arr.join(' ');
 }
 
 ConditionCommand
- = key:Field SEP value:Value {
-	return ({[key]: value})
-}
+ // 单个条件 mycolumn=value
+ = key:Field __ SEP __ value:Value {
+	return `${key}=${value}`
+	}
+  // TODO:
+ // LIKE
+ / key:Field _ LIKE _ value:Value {
+   return `${key}=${value}`
+ }
+// AND/OR
+// BETWEEN
+
  
-MoreConditions 'MoreConditions'
- = _? and? _? field:ConditionCommand { return field }
+MoreConditionCommand 'MoreConditionCommand'
+  = _? AND? _? field:ConditionCommand { return field }  
+// ==== where条件 E ====
 
 // 数字
 Integer "integer"
@@ -77,18 +105,14 @@ Integer "integer"
 
 _ = WhitespaceChar+
 __ = WhitespaceChar*
-
 WhitespaceChar = [ \t\r\n]
+
+// Glue
+SEP = '='
 
 // 字段、表名等
 Field = $[a-zA-Z0-9\._\-]+
-
-// Glue
-SEP
-  = '='
-  
- Value
-  = $[a-zA-Z0-9\._\-]+
+Value = $[a-zA-Z0-9\._\-]+
   
 CommonSearchCommands
   = "chart"
