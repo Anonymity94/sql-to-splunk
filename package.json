@@ -1,5 +1,5 @@
 {
-  "name": "sql-to-splunk-spl",
+  "name": "sql-to-splunk",
   "version": "1.0.0",
   "scripts": {
     "start": "cd src && node index.js",

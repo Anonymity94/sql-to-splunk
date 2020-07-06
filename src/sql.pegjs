@@ -112,7 +112,14 @@ SEP = '='
 
 // 字段、表名等
 Field = $[a-zA-Z0-9\._\-]+
-Value = $[a-zA-Z0-9\._\-]+
+Value
+  = $[a-zA-Z0-9\._\-]+
+  / '"' char:Value '"' {
+    return char.join('')
+  }
+  / "'" char:Value "'" {
+    return char.join('')
+  }
   
 CommonSearchCommands
   = "chart"

@@ -1,5 +1,7 @@
 # SQLtoSplunk
 
+> 完整的sql解析：[sql.pegjs](https://github.com/alsotang/sql.pegjs) 
+
 ## Usage
 ```sh
 $ yarn

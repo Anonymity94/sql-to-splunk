@@ -2,7 +2,7 @@
 const pegjs = require('pegjs')
 const fs = require('fs')
 
-const pegRule = fs.readFileSync('splunk.pegjs', 'utf8')
+const pegRule = fs.readFileSync('sql.pegjs', 'utf8')
 // @see: https://pegjs.org/documentation#installation-node-js
 const parser = pegjs.generate(pegRule)
 
